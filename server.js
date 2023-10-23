@@ -1,10 +1,8 @@
 const Koa = require('koa')
 const { koaBody } = require('koa-body')
-// const { TicketFull } = require('./components/TicketFull')
 const { Date } = require('core-js')
 const cors = require('@koa/cors')
-const fs = require('fs');
-const path = require('path')
+const fs = require('fs')
 const koaStatic = require('koa-static')
 
 const port = 7070
@@ -17,24 +15,15 @@ app.use(koaBody({
 app.use(cors())
 app.use(koaStatic('./pic'))
 
-
 const files = fs.readdirSync('./pic')
 const dir = './pic/'
-console.log(files, 'все файлы в папке');
-
-// const stat = fs.statSync('./pic/' + files[0])
-// console.log(stat.isFile());
-// console.log(stat.isDirectory());
-// console.log(stat.isSymbolicLink());
-// console.log(stat.size / 1024000);
-
+console.log(files, 'все файлы в папке')
 
 // GET
 app.use(async (ctx, next) => {
   const { method } = ctx.request.query
   if (ctx.request.method === 'GET') {
-    console.log(method);
-    if (method === 'getimages'){
+    if (method === 'getimages') {
       ctx.response.body = JSON.stringify(fs.readdirSync('./pic'))
       return
     }
@@ -46,29 +35,29 @@ app.use(async (ctx, next) => {
   const { method, name } = ctx.request.query
   if (ctx.request.method === 'POST') {
     if (method === 'addimage') {
+      const { file } = ctx.request.files
+      let fileName = file.originalFilename
+      if (fs.readdirSync('./pic').includes(fileName)) {
+        fileName = Date.now() + '_' + fileName
+      }
 
-      const {file} = ctx.request.files
-
-      //TODO сделать проверку если файл уже есть 
-      fs.copyFile(file.filepath, dir + file.originalFilename, (err) => {
+      fs.copyFile(file.filepath, dir + fileName, (err) => {
         if (err) {
           console.error(err)
-          return
         }
-        return 
       })
-      ctx.response.body = 'OK'
+      console.log(`File created : ${fileName}`, new Date(Date.now()).toLocaleString())
+      ctx.response.body = `File created : ${fileName}`
       return
     }
     if (method === 'removeimage') {
-      //TODO проверить существует ли
-     fs.unlink(dir + name, (err) => {
+      console.log(name, 'name')
+      fs.unlink(dir + name, (err) => {
         if (err) {
-          console.log(err);
-          return 
+          console.log(err)
         }
-        return 
       })
+      console.log(`File delete : ${name}`, new Date(Date.now()).toLocaleString())
       ctx.response.body = 'remove'
       return
     }
@@ -80,7 +69,6 @@ app.use(async (ctx, next) => {
 
   next()
 })
-
 
 // another
 app.use(async (ctx) => {
